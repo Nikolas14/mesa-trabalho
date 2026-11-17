@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mesa de Trabalho</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f4f1ea;
+      margin: 0;
+      padding: 24px;
+      color: #222;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 16px;
+    }
+    #captura {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      font-size: 1rem;
+      border: 2px solid #c9c2b2;
+      border-radius: 10px;
+      background: #fff;
+    }
+    #captura:focus {
+      outline: none;
+      border-color: #6b8e5a;
+    }
+    .campo-captura {
+      position: relative;
+    }
+    #sugestoes {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin: 4px 0 0;
+      padding: 4px;
+      list-style: none;
+      background: #fff;
+      border: 1px solid #c9c2b2;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      z-index: 30;
+    }
+    #sugestoes[hidden] {
+      display: none;
+    }
+    #sugestoes li {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #sugestoes li.ativa {
+      background: #eef5ea;
+    }
+    #circulos {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      margin: 28px 0;
+    }
+    .circulo {
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px dashed #b8b09c;
+      box-sizing: border-box;
+      padding: 44px 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      overflow-y: auto;
+      position: relative;
+      transition: width 0.3s, height 0.3s;
+    }
+    .circulo h2 {
+      font-size: 1rem;
+      margin: 0 0 4px;
+      color: #6b6558;
+    }
+    #mesa-titulo {
+      font-size: 1rem;
+      color: #8a6d1d;
+      margin: 20px 0 8px;
+    }
+    #lista {
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #fff8e1;
+      border: 2px dashed #d9b84a;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.9rem;
+      width: 100%;
+      box-sizing: border-box;
+      cursor: grab;
+      user-select: none;
+    }
+    .sortable-ghost {
+      opacity: 0.4;
+    }
+    body {
+      padding-bottom: 180px;
+    }
+    #lixeira {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 130px;
+      height: 130px;
+      border-radius: 18px;
+      background: #fff;
+      border: 2px dashed #c97a7a;
+      color: #a65252;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.85rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      box-sizing: border-box;
+      padding: 10px;
+      z-index: 10;
+    }
+    #lixeira .icone {
+      font-size: 2rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .circulo h2 {
+      cursor: move;
+    }
+    .menu-circulo {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 1px solid #c9c2b2;
+      background: #faf8f3;
+      border-radius: 6px;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      z-index: 5;
+    }
+    .menu-circulo-opcoes {
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border: 1px solid #c9c2b2;
+      border-radius: 8px;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      z-index: 6;
+    }
+    .menu-circulo-opcoes[hidden] {
+      display: none;
+    }
+    .menu-circulo-opcoes button {
+      border: none;
+      background: none;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      text-align: left;
+    }
+    .menu-circulo-opcoes button:hover {
+      background: #f0ece2;
+    }
+    .nome-edicao {
+      font-size: 1rem;
+      width: 80%;
+      text-align: center;
+      border: 1px solid #6b8e5a;
+      border-radius: 6px;
+      padding: 2px 4px;
+      margin: 0 0 4px;
+    }
+    #menu-flutuante {
+      position: fixed;
+      left: 24px;
+      bottom: 24px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    #botao-mais {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: #6b8e5a;
+      color: #fff;
+      font-size: 2rem;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    #opcoes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #opcoes[hidden] {
+      display: none;
+    }
+    #opcoes button {
+      padding: 8px 12px;
+      border: 1px solid #c9c2b2;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .vazio {
+      color: #888;
+      font-style: italic;
+      text-align: center;
+      padding: 12px 0;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Mesa de Trabalho</h1>
+    <div class="campo-captura">
+      <input id="captura" type="text" placeholder="Digite qualquer coisa e aperte Enter. Use / para escolher um círculo (Tab seleciona)" autocomplete="off">
+      <ul id="sugestoes" hidden></ul>
+    </div>
+
+    <h2 id="mesa-titulo">Na mesa (ainda não organizados)</h2>
+    <div id="lista" data-circulo="mesa"></div>
+
+    <section id="circulos"></section>
+  </main>
+
+  <div id="menu-flutuante">
+    <div id="opcoes" hidden>
+      <button type="button" data-acao="novo">Novo círculo</button>
+    </div>
+    <button id="botao-mais" type="button" aria-label="Opções">+</button>
+  </div>
+
+  <div id="lixeira">
+    <div class="icone">🗑</div>
+    <div>Arraste aqui para apagar</div>
+  </div>
+
+  <script>
+    const CHAVE = 'mesa.v1';
+    const CHAVE_CIRCULOS = 'mesa.circulos.v1';
+    let circulos = carregarCirculos();
+
+    const captura = document.getElementById('captura');
+    const circulosEl = document.getElementById('circulos');
+    const lista = document.getElementById('lista');
+
+    let cards = carregar();
+    let arrastaveis = [];
+
+    function carregar() {
+      try {
+        const dados = JSON.parse(localStorage.getItem(CHAVE));
+        if (!Array.isArray(dados)) return [];
+        return dados.map((c) => ({
+          texto: String(c.texto ?? ''),
+          criadoEm: c.criadoEm ?? new Date().toISOString(),
+          circulo: Number.isInteger(c.circulo) ? c.circulo : null,
+        }));
+      } catch {
+        return [];
+      }
+    }
+
+    function salvar() {
+      localStorage.setItem(CHAVE, JSON.stringify(cards));
+    }
+
+    function carregarCirculos() {
+      try {
+        const dados = JSON.parse(localStorage.getItem(CHAVE_CIRCULOS));
+        if (Array.isArray(dados) && dados.length > 0 && dados.every((n) => typeof n === 'string')) {
+          return dados;
+        }
+      } catch {
+        // cai no padrão abaixo
+      }
+      return ['Área 1', 'Área 2', 'Área 3'];
+    }
+
+    function salvarCirculos() {
+      localStorage.setItem(CHAVE_CIRCULOS, JSON.stringify(circulos));
+    }
+
+    function criarCard(card, indice) {
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.dataset.indice = String(indice);
+      el.textContent = card.texto;
+      return el;
+    }
+
+    function criarArrastavel(el) {
+      return Sortable.create(el, {
+        group: 'cabeca',
+        draggable: '.card',
+        animation: 150,
+        onEnd: aoSoltar,
+      });
+    }
+
+    // Lê onde cada card ficou no DOM e grava no estado.
+    function aoSoltar() {
+      document.querySelectorAll('[data-circulo]').forEach((zona) => {
+        const destino = zona.dataset.circulo === 'mesa' ? null : Number(zona.dataset.circulo);
+        zona.querySelectorAll('.card').forEach((el) => {
+          cards[Number(el.dataset.indice)].circulo = destino;
+        });
+      });
+      salvar();
+      desenhar();
+    }
+
+    // Troca o título do círculo por um campo para digitar o novo nome.
+    function editarNome(titulo, numero) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'nome-edicao';
+      input.value = circulos[numero];
+      titulo.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let concluido = false;
+      const concluir = (salvarAlteracao) => {
+        if (concluido) return;
+        concluido = true;
+        const novo = input.value.trim();
+        if (salvarAlteracao && novo) {
+          circulos[numero] = novo;
+          salvarCirculos();
+        }
+        desenhar();
+      };
+
+      input.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Enter') concluir(true);
+        if (evento.key === 'Escape') concluir(false);
+      });
+      input.addEventListener('blur', () => concluir(true));
+    }
+
+    // Apaga o círculo. Os cards dele voltam para a mesa e os demais são reindexados.
+    function apagarCirculo(numero) {
+      cards.forEach((c) => {
+        if (c.circulo === numero) {
+          c.circulo = null;
+        } else if (c.circulo !== null && c.circulo > numero) {
+          c.circulo -= 1;
+        }
+      });
+      circulos.splice(numero, 1);
+      salvarCirculos();
+      salvar();
+      desenhar();
+    }
+
+    // Reordena os círculos. Os cards guardam o índice do círculo, então eles são remapeados.
+    function aoReordenarCirculos() {
+      const ordem = [...circulosEl.children].map((el) => Number(el.dataset.circulo));
+      const novaPosicao = new Map(ordem.map((antigo, novo) => [antigo, novo]));
+      cards.forEach((c) => {
+        if (c.circulo !== null) c.circulo = novaPosicao.get(c.circulo);
+      });
+      circulos = ordem.map((antigo) => circulos[antigo]);
+      salvarCirculos();
+      salvar();
+      desenhar();
+    }
+
+    function desenhar() {
+      arrastaveis.forEach((a) => a.destroy());
+      arrastaveis = [];
+
+      circulosEl.innerHTML = '';
+      circulos.forEach((nome, numero) => {
+        const circulo = document.createElement('div');
+        circulo.className = 'circulo';
+        circulo.dataset.circulo = String(numero);
+
+        // Cada card a mais aumenta o círculo, até um limite.
+        const quantidade = cards.filter((c) => c.circulo === numero).length;
+        const diametro = Math.min(520, 260 + quantidade * 14);
+        circulo.style.width = diametro + 'px';
+        circulo.style.height = diametro + 'px';
+
+        const titulo = document.createElement('h2');
+        titulo.textContent = nome;
+        circulo.appendChild(titulo);
+
+        const botaoMenu = document.createElement('button');
+        botaoMenu.type = 'button';
+        botaoMenu.className = 'menu-circulo';
+        botaoMenu.textContent = '☰';
+        botaoMenu.setAttribute('aria-label', 'Menu do círculo');
+
+        const menu = document.createElement('div');
+        menu.className = 'menu-circulo-opcoes';
+        menu.hidden = true;
+
+        const btnEditar = document.createElement('button');
+        btnEditar.type = 'button';
+        btnEditar.textContent = 'Editar nome';
+        btnEditar.addEventListener('click', () => {
+          menu.hidden = true;
+          editarNome(titulo, numero);
+        });
+
+        const btnApagar = document.createElement('button');
+        btnApagar.type = 'button';
+        btnApagar.textContent = 'Apagar círculo';
+        btnApagar.addEventListener('click', () => apagarCirculo(numero));
+
+        menu.append(btnEditar, btnApagar);
+        botaoMenu.addEventListener('click', () => {
+          menu.hidden = !menu.hidden;
+        });
+        circulo.append(botaoMenu, menu);
+
+        cards.forEach((card, indice) => {
+          if (card.circulo === numero) circulo.appendChild(criarCard(card, indice));
+        });
+
+        circulosEl.appendChild(circulo);
+        arrastaveis.push(criarArrastavel(circulo));
+      });
+
+      // Os círculos podem ser arrastados pelo título para mudar a ordem.
+      arrastaveis.push(Sortable.create(circulosEl, {
+        group: 'circulos',
+        draggable: '.circulo',
+        // Qualquer parte do círculo arrasta, exceto cards, botões e campos de texto.
+        filter: '.card, button, input, .menu-circulo-opcoes',
+        preventOnFilter: false,
+        animation: 150,
+        onEnd: aoReordenarCirculos,
+      }));
+
+      lista.innerHTML = '';
+      const naMesa = cards
+        .map((card, indice) => ({ card, indice }))
+        .filter(({ card }) => card.circulo === null);
+
+      if (naMesa.length === 0) {
+        const vazio = document.createElement('div');
+        vazio.className = 'vazio';
+        vazio.textContent = 'Nada na mesa.';
+        lista.appendChild(vazio);
+      }
+      for (const { card, indice } of naMesa) {
+        lista.appendChild(criarCard(card, indice));
+      }
+      arrastaveis.push(criarArrastavel(lista));
+    }
+
+    // Auto-classificação: texto + "/" mostra os círculos; Enter envia o card para o escolhido.
+    const sugestoesEl = document.getElementById('sugestoes');
+    let sugestoes = [];
+    let sugestaoAtiva = 0;
+
+    function atualizarSugestoes() {
+      const pos = captura.value.lastIndexOf('/');
+      if (pos === -1) {
+        fecharSugestoes();
+        return;
+      }
+      const termo = captura.value.slice(pos + 1).trim().toLowerCase();
+      sugestoes = circulos
+        .map((nome, indice) => ({ nome, indice }))
+        .filter(({ nome }) => normalizar(nome).includes(normalizar(termo)));
+      sugestaoAtiva = 0;
+      desenharSugestoes();
+    }
+
+    function desenharSugestoes() {
+      sugestoesEl.innerHTML = '';
+      if (sugestoes.length === 0) {
+        sugestoesEl.hidden = true;
+        return;
+      }
+      sugestoes.forEach((s, i) => {
+        const li = document.createElement('li');
+        li.textContent = s.nome;
+        if (i === sugestaoAtiva) li.className = 'ativa';
+        // mousedown (e não click) para o campo não perder o foco antes.
+        li.addEventListener('mousedown', (evento) => {
+          evento.preventDefault();
+          completarSugestao(s.indice);
+        });
+        sugestoesEl.appendChild(li);
+      });
+      sugestoesEl.hidden = false;
+    }
+
+    function fecharSugestoes() {
+      sugestoes = [];
+      sugestoesEl.hidden = true;
+    }
+
+    // Enter na lista só escolhe o círculo: troca o termo depois de "/" pelo nome completo.
+    function completarSugestao(indice) {
+      const pos = captura.value.lastIndexOf('/');
+      captura.value = captura.value.slice(0, pos) + '/' + circulos[indice];
+      fecharSugestoes();
+      captura.focus();
+    }
+
+    // Enter com "texto /NomeDoCírculo" cria o card no círculo. Devolve true se tratou o Enter.
+    // Ignora maiúsculas e acentos: "pao" encontra "Pão".
+    function normalizar(texto) {
+      return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    }
+
+    function classificarPeloNome() {
+      const bruto = captura.value;
+      const pos = bruto.lastIndexOf('/');
+      if (pos === -1) return false;
+
+      const depois = bruto.slice(pos + 1).trim();
+      const palavras = depois.split(/\s+/).filter(Boolean);
+      let indice = circulos.findIndex((n) => normalizar(n) === normalizar(depois));
+      let texto;
+
+      if (indice !== -1) {
+        // Formato "texto /Círculo": o círculo é o que vem depois da barra.
+        texto = bruto.slice(0, pos).trim();
+      } else {
+        // Formato "/Círculo texto": o círculo é o nome logo depois da barra; o resto é o card.
+        let tamanho = 0;
+        circulos.forEach((n, i) => {
+          const nomePalavras = normalizar(n).split(/\s+/).filter(Boolean);
+          const casa =
+            nomePalavras.length > 0 &&
+            nomePalavras.length <= palavras.length &&
+            nomePalavras.every((p, k) => normalizar(palavras[k]) === p);
+          if (casa && nomePalavras.length > tamanho) {
+            indice = i;
+            tamanho = nomePalavras.length;
+          }
+        });
+        if (indice === -1) return false;
+        texto = palavras.slice(tamanho).join(' ');
+      }
+
+      if (!texto) return true; // sem texto não cria card
+      cards.push({ texto, criadoEm: new Date().toISOString(), circulo: indice });
+      captura.value = '';
+      fecharSugestoes();
+      salvar();
+      desenhar();
+      return true;
+    }
+
+    captura.addEventListener('input', atualizarSugestoes);
+    captura.addEventListener('blur', fecharSugestoes);
+
+    captura.addEventListener('keydown', (evento) => {
+      const aberta = !sugestoesEl.hidden && sugestoes.length > 0;
+      if (aberta) {
+        if (evento.key === 'ArrowDown') {
+          evento.preventDefault();
+          sugestaoAtiva = (sugestaoAtiva + 1) % sugestoes.length;
+          desenharSugestoes();
+          return;
+        }
+        if (evento.key === 'ArrowUp') {
+          evento.preventDefault();
+          sugestaoAtiva = (sugestaoAtiva - 1 + sugestoes.length) % sugestoes.length;
+          desenharSugestoes();
+          return;
+        }
+        if (evento.key === 'Escape') {
+          fecharSugestoes();
+          return;
+        }
+        if (evento.key === 'Tab') {
+          evento.preventDefault();
+          completarSugestao(sugestoes[sugestaoAtiva].indice);
+          return;
+        }
+      }
+
+      if (evento.key !== 'Enter') return;
+      if (classificarPeloNome()) {
+        evento.preventDefault();
+        return;
+      }
+      const texto = captura.value.trim();
+      if (!texto) return;
+      cards.push({ texto, criadoEm: new Date().toISOString(), circulo: null });
+      salvar();
+      desenhar();
+      captura.value = '';
+      fecharSugestoes();
+    });
+
+    // Botão flutuante de opções dos círculos.
+    const botaoMais = document.getElementById('botao-mais');
+    const opcoes = document.getElementById('opcoes');
+
+    botaoMais.addEventListener('click', () => {
+      opcoes.hidden = !opcoes.hidden;
+    });
+
+    opcoes.addEventListener('click', (evento) => {
+      if (evento.target.dataset.acao !== 'novo') return;
+      circulos.push('Área ' + (circulos.length + 1));
+      salvarCirculos();
+      opcoes.hidden = true;
+      desenhar();
+    });
+
+    // Lixeira: quando um card é solto aqui, ele some.
+    Sortable.create(document.getElementById('lixeira'), {
+      group: 'cabeca',
+      sort: false,
+      onAdd(evento) {
+        const indice = Number(evento.item.dataset.indice);
+        evento.item.remove();
+        cards[indice].apagado = true;
+        // Espera o fim do arrastar atual antes de redesenhar.
+        setTimeout(() => {
+          cards = cards.filter((c) => !c.apagado);
+          salvar();
+          desenhar();
+        }, 0);
+      },
+    });
+
+    desenhar();
+  </script>
+</body>
+</html>
